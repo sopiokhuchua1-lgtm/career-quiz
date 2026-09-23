@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="ka">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>კარიერული ორიენტაციის ქვიზი</title>
+  <style>
+    :root {
+      --primary: #0052cc;
+      --bg: #f4f5f7;
+      --card-bg: #ffffff;
+      --text: #172b4d;
+      --border: #dfe1e6;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 20px;
+    }
+    .quiz-card {
+      background: var(--card-bg);
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+      max-width: 600px;
+      width: 100%;
+      padding: 32px;
+      box-sizing: border-box;
+    }
+    .progress-bar-bg {
+      background: var(--border);
+      height: 6px;
+      border-radius: 3px;
+      margin-bottom: 24px;
+      overflow: hidden;
+    }
+    .progress-bar-fill {
+      background: var(--primary);
+      height: 100%;
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+    .question-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 20px;
+      line-height: 1.4;
+    }
+    .options-container {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .option-btn {
+      background: #fff;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      padding: 14px 18px;
+      text-align: left;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      color: var(--text);
+    }
+    .option-btn:hover {
+      border-color: var(--primary);
+      background: #f0f5ff;
+    }
+    .result-container {
+      display: none;
+      text-align: left;
+    }
+    .result-title {
+      color: var(--primary);
+      font-size: 1.5rem;
+      margin-top: 10px;
+    }
+    .result-desc {
+      font-size: 1.05rem;
+      line-height: 1.6;
+      background: #f0f5ff;
+      padding: 16px;
+      border-radius: 8px;
+      margin: 20px 0;
+    }
+    .cta-btn {
+      display: inline-block;
+      width: 100%;
+      text-align: center;
+      background: var(--primary);
+      color: #fff;
+      padding: 14px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: bold;
+      margin-top: 16px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="quiz-card">
+  <!-- Progress Bar -->
+  <div id="quiz-ui">
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" id="progress"></div>
+    </div>
+    <div class="question-title" id="question-text">კითხვა იტვირთება...</div>
+    <div class="options-container" id="options"></div>
+  </div>
+
+  <!-- Result Screen -->
+  <div class="result-container" id="result-ui">
+    <h2>გილოცავ! შენი შედეგია:</h2>
+    <div class="result-title" id="res-category"></div>
+    <div class="result-desc" id="res-description"></div>
+    <a href="#" class="cta-btn" id="res-cta">შეავსე განაცხადი</a>
+  </div>
+</div>
+
+<script>
+  // 14 CATEGORIES AND THEIR END-SCREEN COPY
+  const resultsData = {
+    legal: {
+      title: "იურიდიული მიმართულება",
+      desc: "AI-ის შეფასებით, ორიენტირებული ხარ სამართლებრივ უსაფრთხოებაზე, კანონმდებლობის მკაცრ დაცვასა და რისკების თავიდან აცილებაზე."
+    },
+    mkt_strat: {
+      title: "ბრენდის გამოცდილება და მარკეტინგი - ბრენდის სტრატეგიული განვითარება",
+      desc: "AI-მ დაინახა შენი ინტერესი ბრენდის იმიჯის ფორმირების, სტრატეგიული აზროვნებისა და მასშტაბური მარკეტინგული კამპანიების მიმართ."
+    },
+    mkt_cib: {
+      title: "ბრენდის გამოცდილება და მარკეტინგი - CIB ბიზნესისთვის ღირებულების შექმნა",
+      desc: "AI-ის შეფასებით, ორიენტირებული ხარ ექსკლუზიურობაზე, მაღალი სტანდარტის სერვისებსა და კორპორატიულ კლიენტებთან ურთიერთობებზე."
+    },
+    mkt_digital: {
+      title: "ბრენდის გამოცდილება და მარკეტინგი - ციფრული კომუნიკაციები",
+      desc: "AI-მ დაინახა შენი ინტერესი ციფრული სამყაროს, ონლაინ პლატფორმებისა და კონტენტის დინამიკური მართვის მიმართ."
+    },
+    mkt_internal: {
+      title: "ბრენდის გამოცდილება და მარკეტინგი - შიდა კომუნიკაციები და დამსაქმებლის ბრენდი",
+      desc: "AI-ის შეფასებით, ორიენტირებული ხარ კორპორატიული კულტურის განვითარებაზე, თანამშრომელთა ჩართულობასა და კომპანიის, როგორც საუკეთესო დამსაქმებლის პოზიციონირებაზე."
+    },
+    hr_talent: {
+      title: "ადამიანური კაპიტალის მართვა - ტალანტების მოზიდვა და შერჩევა",
+      desc: "AI-მ დაინახა შენი ნიჭი ახალი ტალანტების აღმოჩენაში, ძლიერი გუნდების შექმნასა და ადამიანებთან ეფექტურ კომუნიკაციაში."
+    },
+    hr_budget: {
+      title: "ადამიანური კაპიტალის მართვა - ბიუჯეტირება და ანალიზი",
+      desc: "AI-ის შეფასებით, ორიენტირებული ხარ ციფრებთან მუშაობაზე, HR ხარჯების დაანგარიშებასა და ფინანსურ ბიუჯეტირებაზე."
+    },
+    hr_ops: {
+      title: "ადამიანური კაპიტალის მართვა - HR პოლიტიკა და ოპერაციები",
+      desc: "AI-მ დაინახა შენი ინტერესი შიდა პროცესების მოწესრიგების, HR ადმინისტრირებისა და შრომითი სტანდარტების დაცვის მიმართ."
+    },
+    construction: {
+      title: "სამშენებლო რისკების პრევენცია და კონტროლი (Construction – CB)",
+      desc: "AI-ის შეფასებით, ორიენტირებული ხარ ტექნიკურ უსაფრთხოებაზე, სამშენებლო ობიექტების ინსპექტირებასა და რისკების პრევენციაზე."
+    },
+    esg: {
+      title: "გარემოს დაცვის, სოციალური და მმართველობის საკითხები (ESG)",
+      desc: "AI-მ დაინახა შენი პასუხისმგებლობა გარემოზე ზრუნვის, მწვანე ინიციატივებისა და სოციალური პროექტების მხარდაჭერის მიმართ."
+    },
+    ai: {
+      title: "AI ინჟინერია",
+      desc: "AI-ის შეფასებით, ორიენტირებული ხარ ინოვაციურ ტექნოლოგიებზე, ხელოვნურ ინტელექტზე, ალგორითმებსა და პროცესების ავტომატიზაციაზე."
+    },
+    tbc_capital: {
+      title: "საინვესტიციო საბანკო ბიზნესი - TBC Capital",
+      desc: "AI-მ დაინახა შენი ინტერესი საფონდო ბაზრების, აქციების ანალიზისა და საინვესტიციო შესაძლებლობების კვლევის მიმართ."
+    },
+    fin_msme: {
+      title: "ფინანსები - მაღალშემოსავლიანი (Concept/WM) და MSME",
+      desc: "AI-ის შეფასებით, ორიენტირებული ხარ მცირე და საშუალო ბიზნესების ფინანსურ მხარდაჭერასა და რესურსების ეფექტურ გადანაწილებაზე."
+    },
+    fin_corp: {
+      title: "ფინანსები - კორპორატიული ბიზნესის მართვა",
+      desc: "AI-მ დაინახა შენი ინტერესი მსხვილი კომპანიების ფინანსური მდგომარეობის შეფასების, რისკების გაანალიზებისა და მასშტაბური დაფინანსების მიმართ."
+    }
+  };
+
+  // INITIALIZE SCORE COUNTERS
+  let scores = {
+    legal: 0, mkt_strat: 0, mkt_cib: 0, mkt_digital: 0, mkt_internal: 0,
+    hr_talent: 0, hr_budget: 0, hr_ops: 0, construction: 0, esg: 0,
+    ai: 0, tbc_capital: 0, fin_msme: 0, fin_corp: 0
+  };
+
+  // SAMPLE QUESTIONS STRUCTURE (Add your full Q1-Q10 mapping here)
+  const questions = [
+    {
+      title: "კითხვა 1: რომელი საქმიანობა გიზიდავს ყველაზე მეტად?",
+      options: [
+        { text: "ხელშეკრულებების შემოწმება და რისკების აცილება", category: "legal" },
+        { text: "ბრენდის იმიჯზე ზრუნვა და კამპანიები", category: "mkt_strat" },
+        { text: "VIP მომხმარებლებისთვის ექსკლუზიური პროექტები", category: "mkt_cib" },
+        { text: "თანამშრომელთა ჩართულობა და შიდა კამპანიები", category: "mkt_internal" },
+        { text: "ახალი თანამშრომლების მოძიება და შერჩევა", category: "hr_talent" },
+        { text: "სამშენებლო ობიექტების ინსპექტირება", category: "construction" }
+      ]
+    },
+    {
+      title: "კითხვა 2: რომელ სფეროში ისურვებდი ცოდნის გაღრმავებას?",
+      options: [
+        { text: "გარემოსდაცვით და სოციალურ პროექტებში (ESG)", category: "esg" },
+        { text: "ხელოვნური ინტელექტის (AI) და ჩატბოტების შექმნაში", category: "ai" },
+        { text: "თანამშრომელთა ხელფასებისა და HR ხარჯების დაანგარიშებაში", category: "hr_budget" },
+        { text: "შრომითი ხელშეკრულებების გაფორმებასა და HR წესებში", category: "hr_ops" },
+        { text: "სამართლებრივი საკითხების მოგვარებაში", category: "legal" }
+      ]
+    }
+    // Repeat for Questions 3 to 10
+  ];
+
+  let currentQuestion = 0;
+
+  function renderQuestion() {
+    if (currentQuestion >= questions.length) {
+      showResult();
+      return;
+    }
+
+    const q = questions[currentQuestion];
+    document.getElementById("question-text").innerText = q.title;
+    
+    const progressPercent = ((currentQuestion) / questions.length) * 100;
+    document.getElementById("progress").style.width = progressPercent + "%";
+
+    const optionsContainer = document.getElementById("options");
+    optionsContainer.innerHTML = "";
+
+    q.options.forEach(opt => {
+      const btn = document.createElement("button");
+      btn.className = "option-btn";
+      btn.innerText = opt.text;
+      btn.onclick = () => selectOption(opt.category);
+      optionsContainer.appendChild(btn);
+    });
+  }
+
+  function selectOption(category) {
+    if (scores.hasOwnProperty(category)) {
+      scores[category]++;
+    }
+    currentQuestion++;
+    renderQuestion();
+  }
+
+  function showResult() {
+    document.getElementById("quiz-ui").style.display = "none";
+    
+    // AUTOMATIC MAX SCORE ENGINE (Finds category with highest points)
+    let topCategory = Object.keys(scores).reduce((a, b) => scores[a] > scores[b] ? a : b);
+
+    const result = resultsData[topCategory] || resultsData.legal;
+
+    document.getElementById("res-category").innerText = result.title;
+    document.getElementById("res-description").innerText = result.desc;
+    document.getElementById("result-ui").style.display = "block";
+  }
+
+  // Start the quiz on load
+  renderQuestion();
+</script>
+
+</body>
+</html>
